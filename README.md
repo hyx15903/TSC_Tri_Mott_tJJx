@@ -6,7 +6,7 @@ DMRG code illustrations, simulation data of the t-J-$J_{\chi }$ model on a trian
 # Reference
 Published: https://journals.aps.org/prx/abstract/10.1103/PhysRevX.12.031009
 
-TeNPy: https://tenpy.readthedocs.io/en/latest/#
+ITensor: https://itensor.org/
 
 # Contact
 [Yixuan Huang] (yixuan.huang@csun.edu)
