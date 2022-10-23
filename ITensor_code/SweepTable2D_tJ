@@ -1,0 +1,61 @@
+input
+    {
+    Nx = 48
+    Ny = 4
+    j2 = 0
+    j2scale = 1
+    jk = 0.4
+    t1 = 3
+    DopingNumber = 16
+    hz = 0
+    jkedge = 0
+    torus = no
+    nsweeps = 32
+    quiet = yes
+    periodic = yes
+    lattice_type = triangularXC
+    ErrorGoal = 3e-6
+    ReadPsiSitesFromFile = no
+    DoDMRG = yes
+    DoMidDMRGSweeps = no
+    SavePsiSites = yes
+    DoChiralityTriangle = yes
+    DoSpinStructure = no
+    DoCorrelation = yes
+    TypeofCorrelation = S
+    SCcorrelation = yes
+    DoVEE = yes
+    DoMidEnergyPerSite = no
+    DoLocalSpinValue = yes
+    CommentsInPsiSites = test
+    CommentsOutPsiSitesCorr = SWP0
+
+    sweeps
+        {
+        maxdim  mindim  cutoff  niter  noise
+        100    20    1E-6    4      1E-6
+        100   10    1E-7   2      1E-7
+100   10    1E-7   2      1E-8
+100   10    1E-7   2      0
+100   10    1E-7   2      0
+200   10    1E-7   2      0
+200   10    1E-7   2      0
+300   10    1E-7   2      0
+300   10    1E-8   2      0
+300   10    1E-8   2      0
+600   10    1E-9   2      0
+600   10    1E-9   2      0
+600   10    1E-9   2      0
+600   10    1E-9   2      0
+1200   10    1E-9   2      0
+1200   10    1E-9   2      0
+1200   10    1E-9   2      0
+1200   10    1E-9   2      0
+2200   10    1E-9   2      0
+2200   10    1E-9   2      0
+2200   10    1E-9   2      0
+4000   10    1E-9   2      0
+4000   10    1E-9   2      0
+        }
+
+    }
