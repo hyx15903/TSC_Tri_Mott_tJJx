@@ -14,13 +14,12 @@ input
     quiet = yes
     periodic = yes
     lattice_type = triangularXC
-    ErrorGoal = 3e-6
+    ErrorGoal = 1e-6
     ReadPsiSitesFromFile = no
     DoDMRG = yes
     DoMidDMRGSweeps = no
     SavePsiSites = yes
     DoChiralityTriangle = yes
-    DoSpinStructure = no
     DoCorrelation = yes
     TypeofCorrelation = S
     SCcorrelation = yes
@@ -28,7 +27,7 @@ input
     DoMidEnergyPerSite = no
     DoLocalSpinValue = yes
     CommentsInPsiSites = test
-    CommentsOutPsiSitesCorr = SWP0
+    CommentsOutPsiSitesCorr = test
 
     sweeps
         {

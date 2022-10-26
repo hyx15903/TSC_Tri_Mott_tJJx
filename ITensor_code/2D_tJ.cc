@@ -56,7 +56,6 @@ int main(int argc, char *argv[])
     auto DoMidDMRGSweeps = input.getYesNo("DoMidDMRGSweeps", false);
     auto SavePsiSites = input.getYesNo("SavePsiSites", true);
     auto DoChiralityTriangle = input.getYesNo("DoChiralityTriangle", false);
-    auto DoSpinStructure = input.getYesNo("DoSpinStructure", false);
     auto DoCorrelation = input.getYesNo("DoCorrelation", false);
     auto TypeofCorrelation = input.getString("TypeofCorrelation", "S"); // S, Sz, Sxy
     auto SCcorr = input.getYesNo("SCcorrelation", false);               // different types
@@ -536,30 +535,9 @@ int main(int argc, char *argv[])
     {
         psi = MPS(state);
         auto psi1 = psi;
-        // cout << "isMPScomplexinital = " << isComplex(psi) << endl;
-        //
-        // complex initial state?
         psi *= 2.0 * Cplx_i;
         psi = sum(psi, psi1, args);
-        // creat random initial psi??????
-        /*cout << "MPS check 0" << endl;
-        psi = applyMPO(H, psi, {"MaxDim=", 50});
-        psi.noPrime();
-        psi.position(N / 2);
-        psi.normalize();
-        psi = applyMPO(H, psi, {"MaxDim=", 50});
-        psi.noPrime();
-        psi.position(N / 2);
-        psi.normalize();
-        psi = applyMPO(H, psi, {"MaxDim=", 50});
-        psi.noPrime();
-        psi.position(N / 2);
-        psi.normalize();
-        for (int j = 1; j <= N; ++j)
-        {
-            psi.ref(j).randomize({"Complex", true});
-        }
-        cout << "MPS orthogonal center:" << endl;*/
+        
         psi.position(N / 2);
         cout << "MPS check 2" << endl;
         psi.normalize();
@@ -574,34 +552,14 @@ int main(int argc, char *argv[])
     //
     printfln("Initial energy = %.8f", innerC(psi, H, psi));
 
-    // total Sz for initial state
-    /*auto SZOI = AutoMPO(sites);
-    for (int i = 1; i <= N; i++)
-    {
-        SZOI += "Sz", i;
-    }
-    auto SZI = toMPO(SZOI);
-    cout << "Using AutoMPO initial TotalSz = " << innerC(psi, SZI, psi) << endl;*/
     //
     // Begin the DMRG calculation
     //
     if (DoDMRG)
     {
-        cout << "dmrg" << endl;
         auto obs = DMRGObserver(psi, {"EnergyErrgoal", ErrorGoal});
         auto [energy, psi0] = dmrg(H, psi, sweeps, obs, args1);
         psi = psi0;
-
-        // cout << "doing excited states" << endl;
-        // auto wfs = std::vector<MPS>(1);
-        // wfs.at(0) = psi;
-        //
-        //  Here the Weight option sets the energy penalty for
-        //  psi1 having any overlap with psi
-        //
-        // auto [en1, psi1] = dmrg(H, wfs, randomMPS(state), sweeps, {"Quiet=", true, "Weight=", 20.0});
-        // psi = psi1;
-        cout << "dmrg done" << endl;
     }
 
     // save the ground state to disk
@@ -609,7 +567,7 @@ int main(int argc, char *argv[])
     {
         writeToFile("sites_tJ_" + lattice_type + "_Nx_" + strNx + "_Ny_" + strNy + "_doping_" + strdoping + "_t1_" + strt1 + "_j2_" + strj2 + "_j2scale_" + strj2_scale + "_jk_" + strjk + CmtOut, sites);
         writeToFile("psi_tJ_" + lattice_type + "_Nx_" + strNx + "_Ny_" + strNy + "_doping_" + strdoping + "_t1_" + strt1 + "_j2_" + strj2 + "_j2scale_" + strj2_scale + "_jk_" + strjk + CmtOut, psi);
-        cout << "save psi/sites done" << endl;
+
     }
 
     if (DoMidDMRGSweeps)
@@ -631,7 +589,6 @@ int main(int argc, char *argv[])
             H_mid1.set(count4, H(i));
             count4++;
         }
-        // cout << "count4 = " << count4 << endl;
         //  LH and RH
         auto LH = psi(1) * H(1) * dag(prime(psi(1)));
         for (int k = 2; k < ((mid_from - 1) * Ny + 1); ++k)
@@ -658,13 +615,11 @@ int main(int argc, char *argv[])
                                   "Cutoff=", 5E-6});
         auto [energy, psi0] = dmrg(H_mid1, LH, RH, psi_mid, sweeps_mid, {"Quiet", quiet});
         cout << "E1 = " << energy << endl;
-        cout << "Mid dmrg Sweeps done" << endl;
     }
     cout << "isMPScomplexAfterDMRG = " << isComplex(psi) << endl;
 
     // Print the final energy reported by DMRG
     //
-    // printfln("\nGround State Energy = %.10f", energy);
     printfln("\nUsing inner = %.10f", innerC(psi, H, psi));
     if (DoMidEnergyPerSite)
     {
@@ -711,23 +666,6 @@ int main(int argc, char *argv[])
                 x2 = x1 + i * Ny;
                 Sab = 0.0;
                 sumCorr = 0.0;
-
-                // single site magnetization
-                /*if ((TypeofCorrelation == "S") || (TypeofCorrelation == "Sz"))
-                {
-                    posi = x1;
-                    psi.position(posi);
-                    C = dag(prime(psi(posi), "Site")) * sites.op("Sz", posi) * psi(posi);
-                    cout << "<Sz(" << posi << ")> = " << C.cplx().real() << endl;
-                    Sab += C.cplx().real();
-
-                    posi = x2;
-                    psi.position(posi);
-                    C = dag(prime(psi(posi), "Site")) * sites.op("Sz", posi) * psi(posi);
-                    //printfln("\nSz = %.10f", C);
-                    cout << "<Sz(" << posi << ")> = " << C.cplx().real() << endl;
-                    Sab = Sab * C.cplx().real();
-                }*/
 
                 // Sz * Sz
                 if ((TypeofCorrelation == "S") || (TypeofCorrelation == "Sz"))
@@ -811,8 +749,6 @@ int main(int argc, char *argv[])
                     C *= op_bm;
                     auto jl = commonInds(psi(x2), psi(x2 - 1), "Link");
                     C *= dag(prime(prime(psi(x2), jl), "Site"));
-                    // cout << "0.5<S+(1) * S-(L/2)> = " << (eltC(C).real() / 2.0) << endl;
-                    // cout << "Real and Complex part = " << C.cplx() << " , Cplx should be 0" << endl;
                     //
                     sumCorr += eltC(C).real() / 2.0;
 
@@ -831,12 +767,9 @@ int main(int argc, char *argv[])
                     C *= op_bp;
                     jl = commonInds(psi(x2), psi(x2 - 1), "Link");
                     C *= dag(prime(prime(psi(x2), jl), "Site"));
-                    // cout << "0.5<S-(1) * S+(L/2)> = " << ( eltC(C).real() / 2.0) << endl;
-                    // cout << "Real and Complex part = " << C.cplx() << " , Cplx should be 0" << endl;
                     //
                     sumCorr += eltC(C).real() / 2.0;
                 }
-                // sumCorr -= Sab;
                 cout << "Correlation of [" << TypeofCorrelation << "] (" << x1 << ")(" << x2 << ") = " << sumCorr << endl;
                 File << i << " " << sumCorr;
                 CorrAve[i] += sumCorr;
@@ -906,177 +839,6 @@ int main(int argc, char *argv[])
         File.close();
     }
 
-    if (DoSpinStructure)
-    {
-        ofstream SpinStru;
-        ofstream SpinStruDataReal;
-        SpinStru.open("SpinStructure_tJ_" + lattice_type + "_Nx_" + strNx + "_Ny_" + strNy + "_doping_" + strdoping + "_t1_" + strt1 + "_j2_" + strj2 + "_j2scale_" + strj2_scale + "_jk_" + strjk + CmtOut + ".txt");
-        SpinStruDataReal.open("SpinStruDataRealSpace_tJ_" + lattice_type + "_Nx_" + strNx + "_Ny_" + strNy + "_doping_" + strdoping + "_t1_" + strt1 + "_j2_" + strj2 + "_j2scale_" + strj2_scale + "_jk_" + strjk + CmtOut + ".txt");
-        cout << endl;
-        int howmuchpoint = Ny * 4;
-        // int xx = 84 / Ny; old version
-        cout << "New definition: Correlation= <S_i*S_j>" << endl;
-        int xx = Nx / 2;
-        cout << "range dNx = " << xx << endl;
-        int CorrRange = Ny * xx;                                  // range
-        int CorrStart = (N - (CorrRange + howmuchpoint)) / 2 + 1; // first site
-        // int CorrStart = 1;
-        // int CorrEnd = CorrStart + howmuchpoint - 1;			  // last site
-        cout << "SpinStructure begin: " << endl;
-        cout << "total points = " << howmuchpoint << endl;
-        cout << "Correlation Range (dNx * Ny) = " << CorrRange << endl;
-        cout << "Correlation Starting point = " << CorrStart << endl;
-        cout << endl;
-        vector<vector<double>> SpinCorrValue(howmuchpoint);
-        for (int i = 0; i < howmuchpoint; i++)
-        {
-            cout << "Calculating point (" << i << ")" << endl;
-            for (int j = 1; j <= CorrRange; j++)
-            {
-
-                // correlation function
-                x1 = i + CorrStart;
-                x2 = j + x1;
-
-                // calculating the spin strucure within a finite size
-
-                // single site magnetization
-                /*posi = x1;
-                psi.position(posi);
-                C = dag(prime(psi(posi), "Site")) * sites.op("Sz", posi) * psi(posi);
-                Sab = C.cplx().real();
-                posi = x2;
-                psi.position(posi);
-                C = dag(prime(psi(posi), "Site")) * sites.op("Sz", posi) * psi(posi);
-                //printfln("\nSz = %.10f", C);
-                Sab = Sab * C.cplx().real();*/
-                // Sz * Sz
-                auto SzCorr = AutoMPO(sites);
-                SzCorr += 1.0, "Nup", x1, "Nup", x2;
-                SzCorr += -1.0, "Nup", x1, "Ndn", x2;
-                SzCorr += -1.0, "Ndn", x1, "Nup", x2;
-                SzCorr += 1.0, "Ndn", x1, "Ndn", x2;
-                auto SzCorr1 = toMPO(SzCorr);
-                // cout << "<Sz(1) * Sz(L/2)> = " << (C.cplx().real()) << endl;
-                // cout << "Real and Complex part = " << C.cplx() << " , Cplx should be 0" << endl;
-                //
-                sumCorr = innerC(psi, SzCorr1, psi).real();
-                // S+ * S-
-                auto op_ap = sites.op("S+", x1);
-                auto op_bm = sites.op("S-", x2);
-                psi.position(x1);
-                auto ir = commonInds(psi(x1), psi(x1 + 1), "Link");
-                C = psi(x1) * op_ap * dag(prime(prime(psi(x1), "Site"), ir));
-                for (int k = x1 + 1; k < x2; ++k)
-                {
-                    C *= psi(k);
-                    C *= dag(prime(psi(k), "Link"));
-                }
-                C *= psi(x2);
-                C *= op_bm;
-                auto jl = commonInds(psi(x2), psi(x2 - 1), "Link");
-                C *= dag(prime(prime(psi(x2), jl), "Site"));
-                // cout << "0.5<S+(1) * S-(L/2)> = " << (C.cplx().real() / 2.0) << endl;
-                // cout << "Real and Complex part = " << C.cplx() << " , Cplx should be 0" << endl;
-                //
-                sumCorr += C.cplx().real() / 2.0;
-                // S- * S+
-                auto op_am = sites.op("S-", x1);
-                auto op_bp = sites.op("S+", x2);
-                psi.position(x1);
-                ir = commonInds(psi(x1), psi(x1 + 1), "Link");
-                C = psi(x1) * op_am * dag(prime(prime(psi(x1), "Site"), ir));
-                for (int k = x1 + 1; k < x2; ++k)
-                {
-                    C *= psi(k);
-                    C *= dag(prime(psi(k), "Link"));
-                }
-                C *= psi(x2);
-                C *= op_bp;
-                jl = commonInds(psi(x2), psi(x2 - 1), "Link");
-                C *= dag(prime(prime(psi(x2), jl), "Site"));
-                // cout << "0.5<S-(1) * S+(L/2)> = " << ( C.cplx().real() / 2.0) << endl;
-                // cout << "Real and Complex part = " << C.cplx() << " , Cplx should be 0" << endl;
-                //
-                sumCorr += C.cplx().real() / 2.0;
-                // New definition: Correlation= <S_i*S_j>
-                // sumCorr -= Sab;
-                SpinStruDataReal << j << " " << sumCorr << endl;
-                SpinCorrValue[i].emplace_back(sumCorr);
-            }
-            SpinStruDataReal << endl;
-            SpinStruDataReal << endl;
-            SpinStruDataReal << endl;
-            SpinStruDataReal << endl;
-        }
-        SpinStruDataReal.close();
-
-        double Sq = 0.0;
-        if (lattice_type == "HoneycombXC")
-        {
-            for (double qx = (-M_PI * 2. / sqrt(3)); qx < (M_PI * 2. / sqrt(3) + 0.05); qx += (4. * M_PI / Ny / sqrt(3)))
-            {
-                for (double qy = (-4. * M_PI / 3.); qy < (4. * M_PI / 3. + 0.05); qy += (8. * M_PI / Ny / 3.))
-                {
-                    Sq = 0.0;
-                    for (int i = 0; i < howmuchpoint; i++)
-                    {
-                        for (int j = 0; j < (int)SpinCorrValue[i].size(); j++)
-                        {
-                            int xx = (j + 1) / Ny;
-                            int yy = (j + 1) % Ny;
-                            if ((i + CorrStart) % 2 == 0)
-                            {
-                                if ((i + CorrStart + j + 1) % 2 == 0)
-                                {
-                                    Sq += 2. * SpinCorrValue[i][j] * cos(qx * (xx * sqrt(3) - (yy * sqrt(3) / 4)) + qy * yy / 2 * 1.5);
-                                }
-                                else
-                                {
-                                    Sq += 2. * SpinCorrValue[i][j] * cos(qx * (xx * sqrt(3) - ((yy - 1) * sqrt(3) / 4)) + qy * ((yy - 1) / 2 * 1.5 + 1.));
-                                }
-                            }
-                            else
-                            {
-                                if ((i + CorrStart + j + 1) % 2 == 0)
-                                {
-                                    Sq += 2. * SpinCorrValue[i][j] * cos(qx * (xx * sqrt(3) - ((yy + 1) * sqrt(3) / 4)) + qy * ((yy - 1) / 2 * 1.5 + 0.5));
-                                }
-                                else
-                                {
-                                    Sq += 2. * SpinCorrValue[i][j] * cos(qx * (xx * sqrt(3) - (yy * sqrt(3) / 4)) + qy * yy / 2 * 1.5);
-                                }
-                            }
-                        }
-                    }
-                    Sq /= howmuchpoint;
-                    SpinStru << qx << " " << qy << " " << Sq << endl;
-                }
-            }
-        }
-        else if (lattice_type == "Square")
-        {
-            for (double qx = (-M_PI * 2.); qx < (M_PI * 2. + 0.02); qx += (2. * M_PI / Ny))
-            {
-                for (double qy = ((-2.) * M_PI); qy < (2. * M_PI + 0.02); qy += (2. * M_PI / Ny))
-                {
-                    Sq = 0.0;
-                    for (int i = 0; i < howmuchpoint; i++)
-                    {
-                        for (int j = 0; j < (int)SpinCorrValue[i].size(); j++)
-                        {
-                            int xx = (j + 1) / Ny;
-                            int yy = (j + 1) % Ny;
-                            Sq += 2. * SpinCorrValue[i][j] * cos(qx * xx + qy * yy);
-                        }
-                    }
-                    Sq /= howmuchpoint;
-                    SpinStru << qx << " " << qy << " " << Sq << endl;
-                }
-            }
-        }
-        SpinStru.close();
-    }
 
     //Chirality for Triangle
     if (DoChiralityTriangle)
@@ -1370,7 +1132,6 @@ int main(int argc, char *argv[])
     if (SCcorr)
     {
         ofstream SCf;
-        cout << "SC correlation begin" << endl;
         SCf.open("SCCorrelation_tJ_" + lattice_type + "_Nx_" + strNx + "_Ny_" + strNy + "_doping_" + strdoping + "_t1_" + strt1 + "_j2_" + strj2 + "_j2scale_" + strj2_scale + "_jk_" + strjk + CmtOut + ".txt");
         SCf << "#x, bb, ba, bc, aa, ac, cc (singlet pairing)" << endl;
         x1 = Ny * 5 - 2;
@@ -1399,134 +1160,8 @@ int main(int argc, char *argv[])
                         SCterm += -0.5, "Cdagup", x1, "Cdagdn", x1 + types[i], "Cup", x2 + types[b], "Cdn", x2;
                         SCterm += -0.5, "Cdagdn", x1, "Cdagup", x1 + types[i], "Cdn", x2 + types[b], "Cup", x2;
                         SCterm += 0.5, "Cdagdn", x1, "Cdagup", x1 + types[i], "Cup", x2 + types[b], "Cdn", x2;
-                        // SCterm += 1.0, "Cdagup", x2, "Cdagdn", x2 + types[b], "Cdn", x1 + types[i], "Cup", x1;
                     }
                     auto SCterm1 = toMPO(SCterm);
-                    // Cdagup_i * Cdn_j+1 = (Adagup_i F_i) F_i+1......F_j (F_j+1 Adn_j+1)
-                    /*psi.position(x1);
-                auto ir = commonInds(psi(x1), psi(x1 + 1), "Link");
-                C = psi(x1) * sites.op("Adagup*F", x1) * dag(prime(prime(psi(x1), "Site"), ir));
-                for (int k = x1 + 1; k < (x2 + types[i]); ++k)
-                {
-                    C *= psi(k);
-                    C *= sites.op("F", k);
-                    C *= dag(prime(prime(psi(k), "Link"), "Site"));
-                }
-                C *= psi(x2 + types[i]);
-                C *= sites.op("F*Adn", x2 + types[i]);
-                auto jl = commonInds(psi(x2 + types[i]), psi(x2 + types[i] - 1), "Link");
-                C *= dag(prime(prime(psi(x2 + types[i]), jl), "Site"));
-                auto Sab = C.cplx();
-                if (i == 2)
-                {
-                    cout << "Cdagup Cdn = " << Sab << endl;
-                }
-                // Cdagdn_i+1 * Cup_j = (Adagdn_i+1) F_i+2......F_j-1 (Aup_j) Adagdn Aup
-                psi.position(x1 + types[i]);
-                ir = commonInds(psi(x1 + types[i]), psi(x1 + types[i] + 1), "Link");
-                C = psi(x1 + types[i]) * sites.op("Adagdn", x1 + types[i]) * dag(prime(prime(psi(x1 + types[i]), "Site"), ir));
-                for (int k = x1 + types[i] + 1; k < (x2); ++k)
-                {
-                    C *= psi(k);
-                    C *= sites.op("F", k);
-                    C *= dag(prime(prime(psi(k), "Link"), "Site"));
-                }
-                C *= psi(x2);
-                C *= sites.op("Aup", x2);
-                jl = commonInds(psi(x2), psi(x2 - 1), "Link");
-                C *= dag(prime(prime(psi(x2), jl), "Site"));
-                Sab *= C.cplx();*/
-                    // Cdagup_i * Cup_j = (Adagup_i F_i) F_i+1......F_j-1 (Aup_j)
-                    /*psi.position(x1);
-                    auto ir = commonInds(psi(x1), psi(x1 + 1), "Link");
-                    C = psi(x1) * sites.op("Adagup*F", x1) * dag(prime(prime(psi(x1), "Site"), ir));
-                    for (int k = x1 + 1; k < (x2); ++k)
-                    {
-                        C *= psi(k);
-                        C *= sites.op("F", k);
-                        C *= dag(prime(prime(psi(k), "Link"), "Site"));
-                    }
-                    C *= psi(x2);
-                    C *= sites.op("Aup", x2);
-                    auto jl = commonInds(psi(x2), psi(x2 - 1), "Link");
-                    C *= dag(prime(prime(psi(x2), jl), "Site"));
-                    auto Scd = eltC(C);
-                    // Cdagdn_i+type[i] * Cdn_j+type[b] = (Adagdn_i+1) F_i+2......F_j (F_i+1 Adn_j+1)
-                    psi.position(x1 + types[i]);
-                    ir = commonInds(psi(x1 + types[i]), psi(x1 + types[i] + 1), "Link");
-                    C = psi(x1 + types[i]) * sites.op("Adagdn", x1 + types[i]) * dag(prime(prime(psi(x1 + types[i]), "Site"), ir));
-                    for (int k = x1 + types[i] + 1; k < (x2 + types[b]); ++k)
-                    {
-                        C *= psi(k);
-                        C *= sites.op("F", k);
-                        C *= dag(prime(prime(psi(k), "Link"), "Site"));
-                    }
-                    C *= psi(x2 + types[b]);
-                    C *= sites.op("F*Adn", x2 + types[b]);
-                    jl = commonInds(psi(x2 + types[b]), psi(x2 + types[b] - 1), "Link");
-                    C *= dag(prime(prime(psi(x2 + types[b]), jl), "Site"));
-                    Scd *= eltC(C);*/
-                    // Cdn_i+1 * Cdagup_j = (Adn_i+1) F_i+2......F_j-1 (Adagup_j)
-                    /*psi.position(x1 + types[i]);
-                ir = commonInds(psi(x1 + types[i]), psi(x1 + types[i] + 1), "Link");
-                C = psi(x1 + types[i]) * sites.op("Adn", x1 + types[i]) * dag(prime(prime(psi(x1 + types[i]), "Site"), ir));
-                for (int k = x1 + types[i] + 1; k < (x2); ++k)
-                {
-                    C *= psi(k);
-                    C *= sites.op("F", k);
-                    C *= dag(prime(prime(psi(k), "Link"), "Site"));
-                }
-                C *= psi(x2);
-                C *= sites.op("Adagup", x2);
-                jl = commonInds(psi(x2), psi(x2 - 1), "Link");
-                C *= dag(prime(prime(psi(x2), jl), "Site"));
-                auto Sef = C.cplx();
-                // Cup_i * Cdagdn_j+1 = (Aup_i F_i) F_i+1......F_j (F_i+1 Adagdn_j+1)
-                psi.position(x1);
-                ir = commonInds(psi(x1), psi(x1 + 1), "Link");
-                C = psi(x1) * sites.op("Aup*F", x1) * dag(prime(prime(psi(x1), "Site"), ir));
-                for (int k = x1 + 1; k < (x2 + types[i]); ++k)
-                {
-                    C *= psi(k);
-                    C *= sites.op("F", k);
-                    C *= dag(prime(prime(psi(k), "Link"), "Site"));
-                }
-                C *= psi(x2 + types[i]);
-                C *= sites.op("F*Adagdn", x2 + types[i]);
-                jl = commonInds(psi(x2 + types[i]), psi(x2 + types[i] - 1), "Link");
-                C *= dag(prime(prime(psi(x2 + types[i]), jl), "Site"));
-                Sef *= C.cplx();*/
-
-                    // Cup_i * Cdagup_j = (Aup_i F_i) F_i+1......F_j-1 (Adagup_j)
-                    /*psi.position(x1);
-                    ir = commonInds(psi(x1), psi(x1 + 1), "Link");
-                    C = psi(x1) * sites.op("Aup*F", x1) * dag(prime(prime(psi(x1), "Site"), ir));
-                    for (int k = x1 + 1; k < (x2); ++k)
-                    {
-                        C *= psi(k);
-                        C *= sites.op("F", k);
-                        C *= dag(prime(prime(psi(k), "Link"), "Site"));
-                    }
-                    C *= psi(x2);
-                    C *= sites.op("Adagup", x2);
-                    jl = commonInds(psi(x2), psi(x2 - 1), "Link");
-                    C *= dag(prime(prime(psi(x2), jl), "Site"));
-                    auto Sgh = eltC(C);
-                    // Cdn_i+1 * Cdagdn_j+1 = (Adn_i+1) F_i+2......F_j (F_i+1 Adagdn_j+1)
-                    psi.position(x1 + types[i]);
-                    ir = commonInds(psi(x1 + types[i]), psi(x1 + types[i] + 1), "Link");
-                    C = psi(x1 + types[i]) * sites.op("Adn", x1 + types[i]) * dag(prime(prime(psi(x1 + types[i]), "Site"), ir));
-                    for (int k = x1 + types[i] + 1; k < (x2 + types[b]); ++k)
-                    {
-                        C *= psi(k);
-                        C *= sites.op("F", k);
-                        C *= dag(prime(prime(psi(k), "Link"), "Site"));
-                    }
-                    C *= psi(x2 + types[b]);
-                    C *= sites.op("F*Adagdn", x2 + types[b]);
-                    jl = commonInds(psi(x2 + types[b]), psi(x2 + types[b] - 1), "Link");
-                    C *= dag(prime(prime(psi(x2 + types[b]), jl), "Site"));
-                    Sgh *= eltC(C);*/
                     SCf << " " << abs(innerC(psi, SCterm1, psi)) << " " << arg(innerC(psi, SCterm1, psi));
                 }
             }
@@ -1589,47 +1224,6 @@ int main(int argc, char *argv[])
     // VEE calculation
     if (DoVEE)
     {
-        cout << endl;
-        /*cout << " site ; VEE (revised)" << endl;
-        //int b = N / 2;
-        for (int b = 1; b < N; b++)
-        {
-            psi.position(b);
-            //SVD this wavefunction to get the spectrum
-            //of density-matrix eigenvalues
-            ITensor wf = psi(b) * psi(b + 1);
-            auto U = psi(b);
-            ITensor S, V;
-            auto spectrum = svd(wf, U, S, V, {"ComputeQNs", true});
-
-            //Apply von Neumann formula
-            //to the squares of the singular values
-            //Real SvN = 0.;
-            //for (auto eig : spectrum.eigsKept())
-            //{
-            //    if (eig > 1E-12)
-            //        SvN += -eig * log(eig);
-            //}
-
-            auto l = leftLinkIndex(psi, b);
-            auto s = siteIndex(psi, b);
-            auto [U, S, V] = svd(psi(b), {l, s});
-            auto u = commonIndex(U, S);
-
-            //Apply von Neumann formula
-            //to the squares of the singular values
-            Real SvN = 0.;
-            for (auto n : range1(dim(u)))
-            {
-                auto Sn = elt(S, n, n);
-                auto p = sqr(Sn);
-                if (p > 1E-12)
-                    SvN += -p * log(p);
-            }
-
-            cout << b << " " << SvN << endl;
-        }*/
-        cout << endl;
         cout << " spectrum in the middle:" << endl;
         int x = N / 2;
         psi.position(x);
@@ -1653,46 +1247,8 @@ int main(int argc, char *argv[])
         cout << endl;
         cout << " site ; VEE (revised)" << endl;
         cout << x << " " << SvN << endl;
-
-        // finding the largest eigenvalue with another way for checking
-        /*double first = 0, second = 0, third = 0, fourth = 0;
-        for (auto p : spectrum.eigs())
-        {
-            if (p > first)
-                first = p;
-        }
-        //finding the second largest eigenvalue
-        for (auto p : spectrum.eigs())
-        {
-            if (p < first)
-            {
-                if (p > second)
-                    second = p;
-            }
-        }
-        //finding the third largest eigenvalue
-        for (auto p : spectrum.eigs())
-        {
-            if ((p < first) && (p < second))
-            {
-                if (p > third)
-                    third = p;
-            }
-        }
-        //finding the fourth largest eigenvalue
-        for (auto p : spectrum.eigs())
-        {
-            if ((p < first) && (p < second) && (p < third))
-            {
-                if (p > fourth)
-                    fourth = p;
-            }
-        }
-        cout << "traditional way:" << endl;
-        cout << first << " " << second << " " << third << " " << fourth << endl;*/
     }
 
-    // Entanglement Spectrum calculation
 
     // print parameters
     //
@@ -1707,19 +1263,5 @@ int main(int argc, char *argv[])
     cout << " hz = " << hz << endl;
     cout << " jkedge = " << jkedge << endl;
     cout << " lattice type = " << lattice_type << endl;
-
-    /*psi.position(N / 2);
-    for (int i = 1; i < 4; i++)
-    {
-        cout << i << "th Tensor " << endl;
-        print(psi(i));
-        cout << N - i + 1 << "th Tensor " << endl;
-        print(psi(N - i + 1));
-    }*/
-
-    // double E0 = inner(psi, H, psi);
-    // double E02 = inner(psi, H, H, psi);
-    // cout << " Ground State variance = " << E02 - E0 * E0 << endl;
-    cout << endl;
     return 0;
 }
