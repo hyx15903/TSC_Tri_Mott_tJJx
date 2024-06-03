@@ -9,5 +9,5 @@ Published: https://journals.aps.org/prx/abstract/10.1103/PhysRevX.12.031009
 ITensor: https://itensor.org/
 
 # Contact
-[Yixuan Huang] (yixuan.huang@csun.edu)
+[Yixuan Huang] (yixuan.huang@riken.jp)
 [Donna Sheng] (donna.sheng1@csun.edu)
