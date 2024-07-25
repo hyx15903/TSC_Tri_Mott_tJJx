@@ -8,7 +8,6 @@ Published: https://journals.aps.org/prx/abstract/10.1103/PhysRevX.12.031009
 
 ITensor: https://itensor.org/
 
-The research activity for obtaining these data and DMRG code is supported by the U.S. Department of Energy, Office of Basic Energy Sciences under Grant No. DE-FG02-06ER46305.
 
 # Contact
 [Yixuan Huang] (yixuan.huang@riken.jp)
